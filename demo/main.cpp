@@ -1,5 +1,6 @@
-#include <example.hpp>
+#include "example.hpp"
 
 int main() {
-  example();
+  Hashing();
+  return 0;
 }

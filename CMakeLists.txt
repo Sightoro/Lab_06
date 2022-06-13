@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.18)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(Boost_USE_STATIC_LIBS ON)
+
 option(BUILD_TESTS "Build tests" ON)
 option(BUILD_DOCS "Build documentation" OFF)
 option(BUILD_COVERAGE "Build code coverage" OFF)
@@ -19,44 +21,50 @@ HunterGate(
         SHA1 "95c47c92f68edb091b5d6d18924baabe02a6962a"
 )
 
-project(multithreading VERSION 0.1.0)
+project(Lab06 VERSION 0.1.0)
 string(APPEND CMAKE_CXX_FLAGS " -pedantic -Werror -Wall -Wextra")
 string(APPEND CMAKE_CXX_FLAGS " -Wno-unused-command-line-argument")
 string(APPEND CMAKE_CXX_FLAGS " -Wshadow -Wnon-virtual-dtor")
 
 # new versions of cmake contain gtest search files
 # commented out to increase the build speed.
+
+hunter_add_package(Boost COMPONENTS filesystem log system thread log)
+hunter_add_package(nlohmann_json)
 hunter_add_package(GTest)
+
+find_package(Boost CONFIG REQUIRED filesystem log log_setup system thread)
+find_package(nlohmann_json CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 
-hunter_add_package(Boost COMPONENTS log system filesystem thread date_time)
-find_package(Boost CONFIG REQUIRED filesystem log system thread log_setup date_time)
-
-hunter_add_package(nlohmann_json)
-find_package(nlohmann_json CONFIG REQUIRED)
-
 add_library(${PROJECT_NAME} STATIC
-        include/picosha2.h
-        )
+        # enum your files and delete this comment
+        ${CMAKE_CURRENT_SOURCE_DIR}/sources/BruteForce.cpp)
 
 add_executable(demo
         ${CMAKE_CURRENT_SOURCE_DIR}/demo/main.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/sources/example.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/sources/BruteForce.cpp
         )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include>"
         )
-target_link_libraries(demo ${PROJECT_NAME}
-        Boost::thread
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third-party/PicoSHA2>"
+        "$<INSTALL_INTERFACE:third-party/PicoSHA2>"
+        )
+
+target_link_libraries(demo ${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME}
         Boost::log
+        Boost::log_setup
         Boost::filesystem
         Boost::system
-        Boost::date_time
-        Boost::log_setup
-        nlohmann_json::nlohmann_json)
-
+        Boost::thread
+        nlohmann_json
+        )
 
 if(BUILD_TESTS)
   add_executable(tests
@@ -98,7 +106,6 @@ install(TARGETS ${PROJECT_NAME} demo
         INCLUDES DESTINATION include
         )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC Boost::log)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION include)
 
 install(EXPORT "${PROJECT_NAME}-targets"
